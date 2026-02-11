@@ -23,5 +23,9 @@ RUN npm install --production
 # Loyiha fayllarini nusxalaymiz
 COPY . .
 
+# Portni ochamiz
+EXPOSE 3000
+
 # Botni ishga tushirish
 CMD ["node", "runner.js"]
+

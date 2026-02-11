@@ -1,8 +1,20 @@
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 require('dotenv').config();
+
+// --- HTTP SERVER FOR RENDER (FREE TIER) ---
+const PORT = process.env.PORT || 3000;
+http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Bot is running!\n');
+}).listen(PORT, () => {
+    console.log(`Web server botni ushlab turish uchun ${PORT}-portda ishlamoqda.`);
+});
+
 const youtubedl = require('youtube-dl-exec');
+
 const ffmpegPath = require('ffmpeg-static');
 const axios = require('axios');
 
