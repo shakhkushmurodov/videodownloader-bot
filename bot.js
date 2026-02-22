@@ -13,10 +13,21 @@ http.createServer((req, res) => {
     console.log(`Web server botni ushlab turish uchun ${PORT}-portda ishlamoqda.`);
 });
 
-const youtubedl = require('youtube-dl-exec');
-
+const { create } = require('youtube-dl-exec');
 const ffmpegPath = require('ffmpeg-static');
 const axios = require('axios');
+
+// yt-dlp binary yo'lini topamiz (Render Docker: /usr/local/bin/yt-dlp)
+const YTDLP_PATHS = [
+    '/usr/local/bin/yt-dlp',      // Docker (Render)
+    path.join(__dirname, 'yt-dlp'), // Local project directory
+    'yt-dlp'                       // System PATH fallback
+];
+const YTDLP_BIN = YTDLP_PATHS.find(p => {
+    try { return fs.existsSync(p); } catch { return false; }
+}) || 'yt-dlp';
+console.log(`[yt-dlp] Using binary: ${YTDLP_BIN}`);
+const youtubedl = create(YTDLP_BIN);
 
 // --- LOGGING ---
 const LOG_FILE = path.join(__dirname, 'bot.log');
@@ -167,10 +178,10 @@ bot.on('inline_query', async (ctx) => {
             id: v.videoId,
             thumb_url: v.thumbnail,
             title: v.title,
-            description: `⏱ Davomiyligi: ${v.timestamp} | 👀 ${v.views} marta ko'rilgan`,
+            description: `⏱ ${v.timestamp} | 👀 ${v.views} marta ko'rilgan`,
             input_message_content: {
-                message_text: `🎞 **${v.title}**\n\n🔗 Havola: ${v.url}`,
-                parse_mode: 'Markdown'
+                // Use plain message_text to avoid Markdown parse errors with special chars in titles/URLs
+                message_text: `🎞 ${v.title}\n\n🔗 ${v.url}`
             },
             reply_markup: {
                 inline_keyboard: [
@@ -327,9 +338,7 @@ async function downloadMedia(ctx, isAudio, directUrl = null) {
         metadata = await youtubedl(url, {
             dumpSingleJson: true,
             noWarnings: true,
-            noCallHome: true,
-            noCheckCertificate: true,
-            youtubeSkipDashManifest: true
+            noCheckCertificate: true
         });
     } catch (e) {
         log(`Metadata error: ${e.message}`);
@@ -370,9 +379,9 @@ async function downloadMedia(ctx, isAudio, directUrl = null) {
 
         const options = {
             output: tempFilePath,
-            noCheckCertificates: true,
+            noCheckCertificate: true,
             noWarnings: true,
-            addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0'],
+            addHeader: ['referer:youtube.com', 'user-agent:googlebot'],
             ffmpegLocation: ffmpegPath
         };
 
@@ -381,7 +390,7 @@ async function downloadMedia(ctx, isAudio, directUrl = null) {
             options.audioFormat = 'mp3';
             options.audioQuality = 0; // Best
         } else {
-            options.format = 'best[ext=mp4]/bestvideo+bestaudio/best';
+            options.format = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
         }
 
         await youtubedl(url, options);

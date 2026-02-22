@@ -1,31 +1,36 @@
-# Node.js LTS (Lightweight) imijidan foydalanamiz
+# Node.js 18 LTS Slim (Debian Bullseye)
 FROM node:18-bullseye-slim
 
-# Tizim paketlarini yangilaymiz va ffmpeg, python (yt-dlp uchun) o'rnatamiz
+# Tizim paketlarini o'rnatamiz: ffmpeg, python3, curl
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     python3 \
-    python3-pip \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# yt-dlp o'rnatish (youtube-dl-exec uchun)
-RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
-    && chmod a+rx /usr/local/bin/yt-dlp
+# yt-dlp ni yuklab o'rnatamiz va ruxsat beramiz
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+    -o /usr/local/bin/yt-dlp \
+    && chmod +x /usr/local/bin/yt-dlp
 
-# Ishchi katalogni belgilaymiz
+# YTDL_HOST env ni o'rnatamiz — youtube-dl-exec yt-dlp ishlatsin
+ENV YTDL_HOST=yt-dlp
+
+# Ishchi katalog
 WORKDIR /app
 
-# Bog'liqliklarni nusxalaymiz va o'rnatamiz
+# downloads papkasini yaratamiz
+RUN mkdir -p /app/downloads
+
+# Faqat package fayllarini ko'chirib npm install qilamiz
 COPY package*.json ./
 RUN npm install --production
 
-# Loyiha fayllarini nusxalaymiz
+# Barcha fayllarni ko'chiramiz
 COPY . .
 
-# Portni ochamiz
+# Portni ochamiz (Render PORT env o'zgaruvchisini ishlatadi)
 EXPOSE 3000
 
-# Botni ishga tushirish
+# Botni ishga tushiramiz
 CMD ["node", "runner.js"]
-
