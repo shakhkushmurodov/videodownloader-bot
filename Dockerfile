@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     python3 \
     curl \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # yt-dlp ni yuklab o'rnatamiz va ruxsat beramiz
@@ -22,9 +23,10 @@ WORKDIR /app
 # downloads papkasini yaratamiz
 RUN mkdir -p /app/downloads
 
-# Faqat package fayllarini ko'chirib npm install qilamiz
-COPY package*.json ./
-RUN npm install --production
+# Faqat package.json ni ko'chirib npm install qilamiz
+COPY package.json ./
+RUN npm install --production --ignore-scripts && npm cache clean --force
+
 
 # Barcha fayllarni ko'chiramiz
 COPY . .

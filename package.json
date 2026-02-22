@@ -4,8 +4,7 @@
     "description": "A Telegram bot to download videos from YouTube, Instagram, and TikTok.",
     "main": "bot.js",
     "scripts": {
-        "start": "node runner.js",
-        "postinstall": "node scripts/install-ytdlp.js"
+        "start": "node runner.js"
     },
     "dependencies": {
         "axios": "^1.13.4",

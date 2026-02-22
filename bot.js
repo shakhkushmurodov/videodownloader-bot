@@ -14,7 +14,18 @@ http.createServer((req, res) => {
 });
 
 const { create } = require('youtube-dl-exec');
-const ffmpegPath = require('ffmpeg-static');
+let ffmpegPath = null;
+try {
+    ffmpegPath = require('ffmpeg-static');
+} catch (e) {
+    console.log('[ffmpeg] ffmpeg-static topilmadi, tizim ffmpeg ishlatiladi.');
+    ffmpegPath = 'ffmpeg';
+}
+// Docker/Linux muhitida tizim ffmpeg'i har doim afzal
+if (process.platform === 'linux') {
+    ffmpegPath = 'ffmpeg';
+}
+
 const axios = require('axios');
 
 // yt-dlp binary yo'lini topamiz (Render Docker: /usr/local/bin/yt-dlp)
@@ -30,7 +41,11 @@ console.log(`[yt-dlp] Using binary: ${YTDLP_BIN}`);
 const youtubedl = create(YTDLP_BIN);
 
 // --- LOGGING ---
-const LOG_FILE = path.join(__dirname, 'bot.log');
+// --- CONSTANTS & PATHS ---
+const DOWNLOAD_DIR = path.join(__dirname, 'downloads');
+if (!fs.existsSync(DOWNLOAD_DIR)) fs.mkdirSync(DOWNLOAD_DIR);
+
+const LOG_FILE = path.join(DOWNLOAD_DIR, 'bot.log');
 function log(msg) {
     const timestamp = new Date().toISOString();
     const logMsg = `[${timestamp}] ${msg}\n`;
@@ -49,7 +64,7 @@ try {
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // --- KESH (CACHE) TIZIMI ---
-const CACHE_FILE = path.join(__dirname, 'bot_cache.json');
+const CACHE_FILE = path.join(DOWNLOAD_DIR, 'bot_cache.json');
 let fileCache = {};
 
 try {
@@ -69,12 +84,7 @@ const saveCache = () => {
 // --- SESSION ---
 const sessionStore = {}; // { userId: { url: "..." } }
 
-// --- CONSTANTS ---
-const MAX_FILE_SIZE_LOCAL_UPLOAD = 50 * 1024 * 1024; // 50MB (Telegram Bot API limiti)
-const DOWNLOAD_DIR = path.join(__dirname, 'downloads');
-
-// Downloads papkasini yaratish
-if (!fs.existsSync(DOWNLOAD_DIR)) fs.mkdirSync(DOWNLOAD_DIR);
+// (DOWNLOAD_DIR handles its own creation above)
 
 // --- START COMMAND ---
 bot.start(async (ctx) => {
